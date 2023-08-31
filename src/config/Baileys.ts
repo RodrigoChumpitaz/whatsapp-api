@@ -36,6 +36,7 @@ export class Baileys{
         this.client.ev.on('contacts.upsert', (contacts: any) => {
             console.log("contacts upsert events")
             console.log(contacts)
+            console.log(this.client.contacts.all()) 
         })
 
         // this.client.ev.on('chats.update', (chats: any) => {
@@ -53,7 +54,7 @@ export class Baileys{
                 broadcast: dataMessage?.broadcast,
                 message: dataMessage?.message
             }
-            // console.log(InfoMessage)
+            console.log(InfoMessage)
         })
     }
 
@@ -77,6 +78,17 @@ export class Baileys{
             caption: `${description ? description : 'Video Description'}`,
             gifPlayback: false
         })
+        return {
+            status: "success"
+        }
+    }
+
+    async sendAudioMessage(remoteJid: string, url: string): Promise<any>{
+        this.client.sendMessage(
+            remoteJid,
+            { audio: { url }, mimetype: 'audio/mp4' },
+            { url: url }
+        )
         return {
             status: "success"
         }

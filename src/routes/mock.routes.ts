@@ -1,82 +1,29 @@
-import { Request, Response, Router } from "express";
-import { Requestbody } from '../interfaces/request.interface'
-import { Baileys } from '../config/Baileys'
+import { Router } from "express";
 import { upload } from "../middlewares/upload";
+import { Controller } from "../controller/api.v1.controller";
+import { Baileys } from "../config/Baileys";
 
 class RouteApi{
     router: Router;
+    controller: Controller
 
-    constructor(private wtsp: Baileys){
+    constructor(){
         this.router = Router();
+        this.controller = new Controller(new Baileys());
         this.mountRoutes();
     }
 
     mountRoutes(){
-        this.router.post('/sendMessage', async (req: Request, res: Response) => {
-            try {
-                const { remoteJid, message }: Requestbody = req.body;
+        this.router.post('/sendMessage', this.controller.sendTextMessage)
 
-                if(!remoteJid && !message){
-                    return res.status(400).json({
-                        message: "Bad Request"
-                    })
-                }
+        this.router.post("/sendContact", this.controller.sendContact)
 
-                const response = await this.wtsp.sendTextMessage(remoteJid, message)
-                return res.status(200).json(response)
-            } catch (error) {
-                return res.status(500).json({
-                    message: `Error: ${error.message}`
-                })
-            }
-        })
+        this.router.post("/sendImage", upload.single("media"), this.controller.sendImage)
 
-        this.router.post("/sendContact", async (req: Request, res: Response) => {
-            try {
-                const { remoteJid, metadata }: Requestbody = req.body;
-                const { contactName, contactPhoneNumber, organization } = metadata;
-                if([remoteJid, contactName, contactPhoneNumber].includes(undefined)){
-                    return res.status(400).json({
-                        message: "Missing required parameters"
-                    })
-                }
-                const response = await this.wtsp.sendContactMessage(remoteJid, contactName, contactPhoneNumber, organization);
-                return res.json(response)
-            } catch (error) {
-                return res.status(500).json({
-                    message: `Error: ${error.message}`
-                })
-            }
-        })
+        this.router.post("/sendVideo", upload.single("media"), this.controller.sendVideo)
 
-        this.router.post("/sendImage", upload.single("media"),async (req: Request, res: Response) => {
-            try {
-                const { remoteJid } = req.body;
-                const { file } = req;
-                const fileUrl = `${file.destination}/${file.originalname}`
-                const response = await this.wtsp.sendImageMessage(remoteJid, fileUrl)
-                return res.json(response)
-            } catch (error) {
-                return res.status(500).json({
-                    message: `Error: ${error.message}`
-                })
-            }
-        })
-
-        this.router.post("/sendVideo", upload.single("media"),async (req: Request, res: Response) => {
-            try {
-                const { remoteJid, description }: Requestbody = req.body;
-                const { file } = req;
-                const fileUrl = `${file.destination}/${file.originalname}`
-                const response = await this.wtsp.sendVideoMessage(remoteJid, fileUrl, description)
-                return res.json(response)
-            } catch (error) {
-                return res.status(500).json({
-                    message: `Error: ${error.message}`
-                })
-            }
-        })
+        this.router.post("/sendAudio", upload.single("media"), this.controller.sendAudio)
     }
 }
 
-export default new RouteApi(new Baileys()).router;
+export default new RouteApi().router;
